@@ -19,6 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/api/fitness", fitnessRoutes);
 
+app.get("/", (req, res) => {
+  res.json({ message: "Fitness API Server is running!" });
+});
 
 
 app.listen(port, () => {
