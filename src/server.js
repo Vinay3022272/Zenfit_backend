@@ -2,6 +2,7 @@ import express from "express"
 import "dotenv/config"
 import { connectDB } from "./lib/db.js"
 import fitnessRoutes from "./routes/fitness.routes.js";
+import cors from "cors";
 
 
 const app = express()
