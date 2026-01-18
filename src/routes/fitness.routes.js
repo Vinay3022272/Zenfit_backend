@@ -6,4 +6,6 @@ const router = express.Router();
 // POST /api/fitness/generate-program
 router.post("/generate-program", generateFitnessProgramController);
 
+
+
 export default router;
