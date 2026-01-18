@@ -6,7 +6,7 @@ import { getMe } from "../controllers/auth.controller.js"
 const router = express.Router()
 
 router.post("/login", login)
-router.post("/me", authCheck, getMe)
+router.get("/me", authCheck, getMe)
 router.post("/plans", getPlan)
 router.post("/logout", logout)
 

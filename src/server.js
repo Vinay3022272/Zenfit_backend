@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.use("/api/fitness", fitnessRoutes);
+app.use("/api/vapi", fitnessRoutes);
 app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {

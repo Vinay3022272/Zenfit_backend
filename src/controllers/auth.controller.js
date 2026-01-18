@@ -16,7 +16,7 @@ export async function login(req, res){
      }
      
      // skipping password checking for now
-     const token = jwt.sign({id: user._id}, JWT_SECRET, {expiresIn: "1h"})
+     const token = jwt.sign({id: user._id}, JWT_SECRET, {expiresIn: "7h"})
      res.status(200).json({success:true, user, token})
    } catch (error) {
     console.log("Error while login", error);
@@ -79,7 +79,7 @@ export const logout = async(req, res) => {
       success: true,
       message: "Logged out successfully"
     });
-    
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Logout failed" });
