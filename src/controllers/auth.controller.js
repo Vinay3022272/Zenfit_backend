@@ -1,6 +1,7 @@
 import User from "../models/User.js"
 import jwt from "jsonwebtoken"
 import "dotenv/config"
+import { Plan } from "../models/Plans.js"
 
 export async function login(req, res){
    try {
@@ -48,3 +49,25 @@ export const getMe = async (req, res) => {
     });
   }
 };
+
+export const getPlan = async(req, res) => {
+  try {
+    const {userId} = req.query
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
+    }
+
+    const plans = await Plan.findById(userId)
+
+    if(!plans){
+      return res.status(200).json({message: "Right now you dont have any plan"})
+    }
+    
+    res.status(200).json({success:true, plans})
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
