@@ -6,6 +6,10 @@ const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+// Add this temporarily to see available models
+const models = await genAI.models.list();
+console.log("Available models:", models);
+
 // Timeout configuration (45 seconds to stay under Vapi's 30s limit)
 const TIMEOUT_MS = 45000;
 
@@ -200,7 +204,7 @@ console.log(`[${new Date().toISOString()}] Generating workout and diet plans in 
 const [workoutResult, dietResult] = await Promise.all([
   retryWithBackoff(() =>
     genAI.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3-flash-preview",
       contents: workoutPrompt,
       config: {
         temperature: 0.4,
@@ -211,7 +215,7 @@ const [workoutResult, dietResult] = await Promise.all([
   ),
   retryWithBackoff(() =>
     genAI.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3-flash-preview",
       contents: dietPrompt,
       config: {
         temperature: 0.4,
