@@ -50,27 +50,29 @@ export const getMe = async (req, res) => {
   }
 };
 
-export const getPlan = async(req, res) => {
+export const getPlan = async (req, res) => {
   try {
-    const {userId} = req.query
+    const { userId } = req.query;
 
-    if (!userId) {
-      return res.status(400).json({ message: "userId is required" });
+    // Validate ObjectId
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid userId" });
     }
 
-    const plans = await Plan.findById(userId)
+    const plans = await Plan.find({ userId });
 
-    if(!plans){
-      return res.status(200).json({message: "Right now you dont have any plan"})
-    }
-    
-    res.status(200).json({success:true, plans})
+    return res.status(200).json({
+      success: true,
+      plans: plans || [], // always an array
+    });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
-}
+};
+
+
 
 export const logout = async(req, res) => {
   try {
