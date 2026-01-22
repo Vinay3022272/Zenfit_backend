@@ -227,8 +227,8 @@ const [workoutResult, dietResult] = await Promise.all([
 ]);
 
 console.log(`[${new Date().toISOString()}] Both plans generated successfully`);
-console.log("Workout plan:", workoutResult.text);
-console.log("Diet plan:", dietResult.text);
+// console.log("Workout plan:", workoutResult.text);
+// console.log("Diet plan:", dietResult.text);
 
 let workoutPlan = validateWorkoutPlan(JSON.parse(workoutResult.text));
 let dietPlan = validateDietPlan(JSON.parse(dietResult.text));

@@ -2,6 +2,7 @@ import User from "../models/User.js"
 import jwt from "jsonwebtoken"
 import "dotenv/config"
 import { Plan } from "../models/Plans.js"
+import mongoose from "mongoose"
 
 export async function login(req, res){
    try {
