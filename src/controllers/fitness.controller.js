@@ -56,8 +56,8 @@ function createTimeout(ms) {
     setTimeout(
       () =>
         reject(new Error("Request timeout - processing is taking too long")),
-      ms
-    )
+      ms,
+    ),
   );
 }
 
@@ -87,7 +87,7 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
       const delay = suggestedDelay || baseDelay * Math.pow(2, i);
 
       console.log(
-        `Rate limit hit, retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`
+        `Rate limit hit, retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`,
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -197,41 +197,44 @@ async function generateFitnessPlan(payload) {
     
     DO NOT add any fields that are not in this example. Your response must be a valid JSON object with no additional text.`;
 
+  // Replace lines 168-181 with this:
+  console.log(
+    `[${new Date().toISOString()}] Generating workout and diet plans in parallel...`,
+  );
 
- // Replace lines 168-181 with this:
-console.log(`[${new Date().toISOString()}] Generating workout and diet plans in parallel...`);
+  const [workoutResult, dietResult] = await Promise.all([
+    retryWithBackoff(() =>
+      genAI.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: workoutPrompt,
+        config: {
+          temperature: 0.4,
+          topP: 0.9,
+          responseMimeType: "application/json",
+        },
+      }),
+    ),
+    retryWithBackoff(() =>
+      genAI.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: dietPrompt,
+        config: {
+          temperature: 0.4,
+          topP: 0.9,
+          responseMimeType: "application/json",
+        },
+      }),
+    ),
+  ]);
 
-const [workoutResult, dietResult] = await Promise.all([
-  retryWithBackoff(() =>
-    genAI.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: workoutPrompt,
-      config: {
-        temperature: 0.4,
-        topP: 0.9,
-        responseMimeType: "application/json",
-      },
-    })
-  ),
-  retryWithBackoff(() =>
-    genAI.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: dietPrompt,
-      config: {
-        temperature: 0.4,
-        topP: 0.9,
-        responseMimeType: "application/json",
-      },
-    })
-  ),
-]);
+  console.log(
+    `[${new Date().toISOString()}] Both plans generated successfully`,
+  );
+  // console.log("Workout plan:", workoutResult.text);
+  // console.log("Diet plan:", dietResult.text);
 
-console.log(`[${new Date().toISOString()}] Both plans generated successfully`);
-// console.log("Workout plan:", workoutResult.text);
-// console.log("Diet plan:", dietResult.text);
-
-let workoutPlan = validateWorkoutPlan(JSON.parse(workoutResult.text));
-let dietPlan = validateDietPlan(JSON.parse(dietResult.text));
+  let workoutPlan = validateWorkoutPlan(JSON.parse(workoutResult.text));
+  let dietPlan = validateDietPlan(JSON.parse(dietResult.text));
 
   // Get user details for the plan
   const user = await User.findById(user_id);
@@ -240,10 +243,17 @@ let dietPlan = validateDietPlan(JSON.parse(dietResult.text));
   }
 
   // Save to MongoDB database using Mongoose
- console.log(`[${new Date().toISOString()}] Saving plan to database...`);
+  console.log(`[${new Date().toISOString()}] Saving plan to database...`);
+
+  // Set all previous active plans for this user to inactive
+  await Plan.updateMany(
+    { userId: user_id, isActive: true },
+    { $set: { isActive: false } },
+  );
+
   const newPlan = await Plan.create({
     userId: user_id,
-    name: `${fitness_goal} Plan - ${new Date().toLocaleDateString()}`,
+    name: `${payload.fitness_goal} Plan - ${new Date().toLocaleDateString()}`,
     email: user.email,
     image: user.profilePic || "",
     workoutPlan,
@@ -252,7 +262,7 @@ let dietPlan = validateDietPlan(JSON.parse(dietResult.text));
   });
 
   const planId = newPlan._id.toString();
-  console.log(`[${new Date().toISOString()}] Successfully created plan:`, planId);
+  console.log(`[${new Date().toISOString()}] Successfully created plan:`);
 
   return {
     planId,
