@@ -6,8 +6,8 @@ const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Timeout configuration (25 seconds to stay under Vapi's 30s limit)
-const TIMEOUT_MS = 25000;
+// Timeout configuration (45 seconds to stay under Vapi's 30s limit)
+const TIMEOUT_MS = 45000;
 
 // Validate and fix workout plan to ensure it has proper numeric types
 function validateWorkoutPlan(plan) {
@@ -156,27 +156,6 @@ async function generateFitnessPlan(payload) {
   
   DO NOT add any fields that are not in this example. Your response must be a valid JSON object with no additional text.`;
 
-  // Generating workout plan...
-  console.log("Generating workout plan...");
-  const workoutResult = await retryWithBackoff(() =>
-    genAI.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: workoutPrompt,
-      config: {
-        temperature: 0.4,
-        topP: 0.9,
-        responseMimeType: "application/json",
-      },
-    })
-  );
-  console.log("workout: ", workoutResult.text);
-  const workoutPlanText = workoutResult.text;
-
-  // Validate the workout plan from AI
-  let workoutPlan = JSON.parse(workoutPlanText);
-  workoutPlan = validateWorkoutPlan(workoutPlan);
-  console.log("Workout plan generated successfully");
-
   const dietPrompt = `You are an experienced nutrition coach creating a personalized diet plan based on:
     Age: ${age}
     Height: ${height}
@@ -214,10 +193,25 @@ async function generateFitnessPlan(payload) {
     
     DO NOT add any fields that are not in this example. Your response must be a valid JSON object with no additional text.`;
 
-  console.log("Generating diet plan...");
-  const dietResult = await retryWithBackoff(() =>
+
+ // Replace lines 168-181 with this:
+console.log(`[${new Date().toISOString()}] Generating workout and diet plans in parallel...`);
+
+const [workoutResult, dietResult] = await Promise.all([
+  retryWithBackoff(() =>
     genAI.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
+      contents: workoutPrompt,
+      config: {
+        temperature: 0.4,
+        topP: 0.9,
+        responseMimeType: "application/json",
+      },
+    })
+  ),
+  retryWithBackoff(() =>
+    genAI.models.generateContent({
+      model: "gemini-1.5-flash",
       contents: dietPrompt,
       config: {
         temperature: 0.4,
@@ -225,15 +219,15 @@ async function generateFitnessPlan(payload) {
         responseMimeType: "application/json",
       },
     })
-  );
-  console.log("diet: ", dietResult.text);
+  ),
+]);
 
-  const dietPlanText = dietResult.text;
+console.log(`[${new Date().toISOString()}] Both plans generated successfully`);
+console.log("Workout plan:", workoutResult.text);
+console.log("Diet plan:", dietResult.text);
 
-  // Validate the diet plan from AI
-  let dietPlan = JSON.parse(dietPlanText);
-  dietPlan = validateDietPlan(dietPlan);
-  console.log("Diet plan generated successfully");
+let workoutPlan = validateWorkoutPlan(JSON.parse(workoutResult.text));
+let dietPlan = validateDietPlan(JSON.parse(dietResult.text));
 
   // Get user details for the plan
   const user = await User.findById(user_id);
@@ -242,7 +236,7 @@ async function generateFitnessPlan(payload) {
   }
 
   // Save to MongoDB database using Mongoose
-  console.log("Saving plan to database...");
+ console.log(`[${new Date().toISOString()}] Saving plan to database...`);
   const newPlan = await Plan.create({
     userId: user_id,
     name: `${fitness_goal} Plan - ${new Date().toLocaleDateString()}`,
@@ -254,7 +248,7 @@ async function generateFitnessPlan(payload) {
   });
 
   const planId = newPlan._id.toString();
-  console.log("Successfully created plan:", planId);
+  console.log(`[${new Date().toISOString()}] Successfully created plan:`, planId);
 
   return {
     planId,

@@ -23,6 +23,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
+//   "/api/vapi/generate-program"
+//   "/api/vapi/generate-program"
 app.use("/api/vapi", fitnessRoutes);
 app.use("/api/auth", authRoutes);
 
